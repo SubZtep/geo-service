@@ -53,7 +53,7 @@ Build and run:
 
 ```bash
 docker build -t geo-service .
-docker run -p 3002:3002 \
+docker run -p 3000:3000 \
   -e API_KEY=your-secret-api-key \
   -e GEOIP_ACCOUNT_ID=your-account-id \
   -e GEOIP_LICENSE_KEY=your-license-key \
@@ -67,7 +67,7 @@ The container will automatically download the MaxMind database on first start.
 ### Health Check
 
 ```bash
-curl http://localhost:3002/
+curl http://localhost:3000/
 ```
 
 Response:
@@ -83,7 +83,7 @@ Response:
 
 ```bash
 curl -H "X-API-Key: your-secret-api-key" \
-  http://localhost:3002/lookup/8.8.8.8
+  http://localhost:3000/lookup/8.8.8.8
 ```
 
 Response:
@@ -160,7 +160,7 @@ Response:
 1. Generate a secure API key:
 
 ```bash
-openssl rand -base64 32
+uuidgen -7
 ```
 
 2. Set environment variables in your deployment platform
@@ -171,7 +171,3 @@ openssl rand -base64 32
 bun run build
 bun run dist/index.js
 ```
-
-## License
-
-MIT

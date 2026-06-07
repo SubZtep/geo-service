@@ -29,7 +29,7 @@ USER bun
 COPY --chown=bun:bun --chmod=555 --from=builder /home/bun/app/dist ./dist
 COPY --chown=bun:bun --chmod=555 --from=prod-deps /home/bun/app/node_modules ./node_modules
 
-EXPOSE 3002
+EXPOSE 3000
 USER root
 ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["bun", "run", "dist/index.js"]
