@@ -14,5 +14,8 @@ declare module "bun" {
 
     /** MaxMind key (for downloading the database). */
     GEOIP_LICENSE_KEY: string
+
+    /** Queue concurrency limit for MaxMind lookups. @default 2 */
+    QUEUE_CONCURRENCY?: string
   }
 }
