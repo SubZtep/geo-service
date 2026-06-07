@@ -14,11 +14,13 @@ Lightweight IP geolocation service using MaxMind GeoLite2 database.
 ### Development
 
 1. Copy environment file:
+
 ```bash
 cp .env.example .env
 ```
 
 2. Set your configuration in `.env`:
+
 ```env
 API_KEY=your-secret-api-key
 GEOIP_ACCOUNT_ID=your-maxmind-account-id
@@ -26,11 +28,13 @@ GEOIP_LICENSE_KEY=your-maxmind-license-key
 ```
 
 3. Install dependencies:
+
 ```bash
 bun install
 ```
 
 4. Download MaxMind database manually (first time):
+
 ```bash
 # Get a free account at https://www.maxmind.com/en/geolite2/signup
 # Download GeoLite2-City.mmdb and place it at /usr/share/GeoIP/GeoLite2-City.mmdb
@@ -38,6 +42,7 @@ bun install
 ```
 
 5. Start development server:
+
 ```bash
 bun dev
 ```
@@ -45,6 +50,7 @@ bun dev
 ### Docker
 
 Build and run:
+
 ```bash
 docker build -t geo-service .
 docker run -p 3002:3002 \
@@ -65,6 +71,7 @@ curl http://localhost:3002/
 ```
 
 Response:
+
 ```json
 {
   "status": "ok",
@@ -80,6 +87,7 @@ curl -H "X-API-Key: your-secret-api-key" \
 ```
 
 Response:
+
 ```json
 {
   "continent": {
@@ -105,17 +113,18 @@ Response:
 
 ## Environment Variables
 
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `PORT` | No | `3002` | Server port |
-| `API_KEY` | Yes | - | API authentication key |
-| `GEOIP_DB_PATH` | No | `/usr/share/GeoIP/GeoLite2-City.mmdb` | Path to MaxMind database file |
-| `GEOIP_ACCOUNT_ID` | Yes (Docker) | - | MaxMind account ID for database downloads |
-| `GEOIP_LICENSE_KEY` | Yes (Docker) | - | MaxMind license key for database downloads |
+| Variable            | Required | Default                               | Description                                |
+| ------------------- | -------- | ------------------------------------- | ------------------------------------------ |
+| `PORT`              | No       | `3000`                                | Server port                                |
+| `API_KEY`           | Yes      | -                                     | API authentication key                     |
+| `GEOIP_DB_PATH`     | No       | `/usr/share/GeoIP/GeoLite2-City.mmdb` | Path to MaxMind database file              |
+| `GEOIP_ACCOUNT_ID`  | Yes      | -                                     | MaxMind account ID for database downloads  |
+| `GEOIP_LICENSE_KEY` | Yes      | -                                     | MaxMind license key for database downloads |
 
 ## Error Responses
 
 ### 401 Unauthorized
+
 ```json
 {
   "error": "Missing X-API-Key header"
@@ -123,6 +132,7 @@ Response:
 ```
 
 ### 403 Forbidden
+
 ```json
 {
   "error": "Invalid API key"
@@ -130,6 +140,7 @@ Response:
 ```
 
 ### 400 Bad Request
+
 ```json
 {
   "error": "Invalid IP address format"
@@ -137,6 +148,7 @@ Response:
 ```
 
 ### 404 Not Found
+
 ```json
 {
   "error": "Location not found for IP"
@@ -146,6 +158,7 @@ Response:
 ## Production Deployment
 
 1. Generate a secure API key:
+
 ```bash
 openssl rand -base64 32
 ```
@@ -153,6 +166,7 @@ openssl rand -base64 32
 2. Set environment variables in your deployment platform
 
 3. Deploy the Docker container or build the service:
+
 ```bash
 bun run build
 bun run dist/index.js
