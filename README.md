@@ -1,7 +1,6 @@
 # Geo Service
 
 [![CI](https://github.com/SubZtep/geo-service/actions/workflows/ci.yml/badge.svg)](https://github.com/SubZtep/geo-service/actions/workflows/ci.yml)
-[![Docker Build](https://github.com/SubZtep/geo-service/actions/workflows/docker.yml/badge.svg)](https://github.com/SubZtep/geo-service/actions/workflows/docker.yml)
 
 Lightweight IP geolocation service using MaxMind GeoLite2 database.
 
