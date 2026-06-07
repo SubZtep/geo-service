@@ -1,11 +1,16 @@
 # Geo Service
 
+[![CI](https://github.com/SubZtep/geo-service/actions/workflows/ci.yml/badge.svg)](https://github.com/SubZtep/geo-service/actions/workflows/ci.yml)
+[![Docker Build](https://github.com/SubZtep/geo-service/actions/workflows/docker.yml/badge.svg)](https://github.com/SubZtep/geo-service/actions/workflows/docker.yml)
+
 Lightweight IP geolocation service using MaxMind GeoLite2 database.
 
 ## Features
 
 - Fast IP-to-location lookups (city, country, continent, coordinates)
+- Request queuing with configurable concurrency control
 - Simple API key authentication
+- Comprehensive integration test suite
 - Docker-ready with automatic MaxMind database downloads
 - Built with Hono and Bun for performance
 
@@ -75,7 +80,23 @@ Response:
 ```json
 {
   "status": "ok",
-  "service": "geo-service"
+  "service": "geo-service",
+  "version": "1.0.1",
+  "uptime": 3600,
+  "timestamp": "2026-06-07T12:00:00.000Z",
+  "database": {
+    "path": "/usr/share/GeoIP/GeoLite2-City.mmdb",
+    "lastModified": "2026-06-01T00:00:00.000Z"
+  },
+  "queue": {
+    "pending": 0,
+    "size": 0,
+    "isPaused": false
+  },
+  "endpoints": {
+    "health": "GET /",
+    "lookup": "GET /lookup/:ip (requires X-API-Key header)"
+  }
 }
 ```
 
@@ -117,6 +138,7 @@ Response:
 | ------------------- | -------- | ------------------------------------- | ------------------------------------------ |
 | `PORT`              | No       | `3000`                                | Server port                                |
 | `API_KEY`           | Yes      | -                                     | API authentication key                     |
+| `QUEUE_CONCURRENCY` | No       | `2`                                   | Max concurrent MaxMind lookups             |
 | `GEOIP_DB_PATH`     | No       | `/usr/share/GeoIP/GeoLite2-City.mmdb` | Path to MaxMind database file              |
 | `GEOIP_ACCOUNT_ID`  | Yes      | -                                     | MaxMind account ID for database downloads  |
 | `GEOIP_LICENSE_KEY` | Yes      | -                                     | MaxMind license key for database downloads |
@@ -155,6 +177,27 @@ Response:
 }
 ```
 
+## Development
+
+### Running Tests
+
+```bash
+bun test
+```
+
+### Linting
+
+```bash
+bun run lint        # Check for issues
+bun run lint:fix    # Auto-fix issues
+```
+
+### Building
+
+```bash
+bun run build       # Output to dist/
+```
+
 ## Production Deployment
 
 1. Generate a secure API key:
@@ -171,3 +214,13 @@ uuidgen -7
 bun run build
 bun run dist/index.js
 ```
+
+## CI/CD
+
+This project includes GitHub Actions workflows for:
+
+- **CI Pipeline**: Runs linting, tests, and build on PRs and pushes to main
+- **Docker Build**: Builds and pushes Docker images to GitHub Container Registry
+- **Dependabot**: Automated dependency updates
+
+Status badges are shown at the top of this README.

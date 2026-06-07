@@ -8,11 +8,12 @@
     "dev": "bun run --hot src/index.ts",
     "lint": "biome check",
     "lint:fix": "biome check --write --unsafe",
-    "test": "echo \"no tests\""
+    "test": "bun test"
   },
   "dependencies": {
     "@maxmind/geoip2-node": "^6.3.4",
     "hono": "^4.12.23",
+    "p-queue": "^9.3.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {

@@ -2,6 +2,7 @@ import { Hono } from "hono"
 import { name, version } from "../package.json"
 import { getGeoLocation } from "./geo"
 import { apiKeyAuth } from "./middleware/auth"
+import { queue } from "./queue"
 import { GeoLocationSchema } from "./schema"
 
 const app = new Hono()
@@ -41,6 +42,11 @@ app.get("/", async c => {
       path: mmdbPath,
       lastModified: dbLastModified
     },
+    queue: {
+      pending: queue.pending,
+      size: queue.size,
+      isPaused: queue.isPaused
+    },
     endpoints: {
       health: "GET /",
       lookup: "GET /lookup/:ip (requires X-API-Key header)"
@@ -65,7 +71,11 @@ app.get("/lookup/:ip", apiKeyAuth, async c => {
     return c.json({ error: "Invalid IP address format" }, 400)
   }
 
-  const geoData = await getGeoLocation(ip)
+  // Queue the MaxMind lookup to control concurrency
+  const geoData = await queue.add(async () => {
+    console.log("[queue] Processing IP lookup:", ip)
+    return await getGeoLocation(ip)
+  })
 
   if (!geoData) {
     return c.json({ error: "Location not found for IP" }, 404)
@@ -82,6 +92,9 @@ app.get("/lookup/:ip", apiKeyAuth, async c => {
 })
 
 const port = Number(process.env.PORT || 3000)
+
+// Export app for testing
+export { app }
 
 export default {
   port,
