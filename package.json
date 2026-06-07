@@ -1,0 +1,22 @@
+{
+  "name": "geo-service",
+  "version": "1.0.0",
+  "packageManager": "bun@1.3.14",
+  "private": true,
+  "scripts": {
+    "build": "bun build --minify --target bun --outdir ./dist src/index.ts",
+    "dev": "bun run --hot src/index.ts",
+    "lint": "biome check",
+    "lint:fix": "biome check --write --unsafe",
+    "test": "echo \"no tests\""
+  },
+  "dependencies": {
+    "@maxmind/geoip2-node": "^6.3.4",
+    "hono": "^4.12.23",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.4.16",
+    "@types/bun": "^1.3.14"
+  }
+}

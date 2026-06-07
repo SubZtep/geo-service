@@ -1,0 +1,63 @@
+{
+  "$schema": "https://biomejs.dev/schemas/latest/schema.json",
+  "vcs": {
+    "enabled": false,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
+  "files": {
+    "ignoreUnknown": true,
+    "includes": ["src/**/*.ts", "*.json"]
+  },
+  "formatter": {
+    "useEditorconfig": true
+  },
+  "assist": {
+    "actions": {
+      "source": {
+        "organizeImports": "on"
+      }
+    }
+  },
+  "linter": {
+    "rules": {
+      "recommended": true,
+      "complexity": {
+        "noUselessUndefinedInitialization": "off",
+        "noUselessSwitchCase": "off"
+      },
+      "correctness": {
+        "noUnreachable": "warn",
+        "noUnusedImports": "warn",
+        "noUnusedVariables": "warn",
+        "noChildrenProp": "off",
+        "useExhaustiveDependencies": "off"
+      },
+      "suspicious": {
+        "noExplicitAny": "off",
+        "noImplicitAnyLet": "off",
+        "noTsIgnore": "off",
+        "useIterableCallbackReturn": "off",
+        "noFallthroughSwitchClause": "off"
+      },
+      "style": {
+        "noNonNullAssertion": "off"
+      }
+    }
+  },
+  "javascript": {
+    "formatter": {
+      "lineWidth": 120,
+      "quoteStyle": "double",
+      "semicolons": "asNeeded",
+      "arrowParentheses": "asNeeded",
+      "trailingCommas": "none",
+      "indentStyle": "space"
+    }
+  },
+  "json": {
+    "formatter": {
+      "indentStyle": "space"
+    }
+  }
+}
