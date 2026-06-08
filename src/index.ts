@@ -1,5 +1,5 @@
 import { Hono } from "hono"
-import { prettyJSON } from 'hono/pretty-json'
+import { prettyJSON } from "hono/pretty-json"
 import { name, version } from "../package.json"
 import { getGeoLocation } from "./geo"
 import { apiKeyAuth } from "./middleware/auth"
