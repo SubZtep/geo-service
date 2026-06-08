@@ -1,4 +1,5 @@
 import { Hono } from "hono"
+import { prettyJSON } from 'hono/pretty-json'
 import { name, version } from "../package.json"
 import { getGeoLocation } from "./geo"
 import { apiKeyAuth } from "./middleware/auth"
@@ -6,6 +7,7 @@ import { queue } from "./queue"
 import { GeoLocationSchema } from "./schema"
 
 const app = new Hono()
+app.use(prettyJSON({ force: true }))
 
 // Track server start time for uptime calculation
 const startTime = Date.now()
