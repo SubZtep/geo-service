@@ -7,6 +7,7 @@ import type { Context, Next } from "hono"
 export async function apiKeyAuth(c: Context, next: Next) {
   const apiKey = c.req.header("X-API-Key")
   const validApiKey = process.env.API_KEY
+  const validApiKey2 = process.env.API_KEY2
 
   if (!validApiKey) {
     console.error("[auth] API_KEY environment variable not set")
@@ -17,7 +18,7 @@ export async function apiKeyAuth(c: Context, next: Next) {
     return c.json({ error: "Missing X-API-Key header" }, 401)
   }
 
-  if (apiKey !== validApiKey) {
+  if (apiKey !== validApiKey && apiKey !== validApiKey2) {
     return c.json({ error: "Invalid API key" }, 403)
   }
 

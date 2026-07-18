@@ -137,6 +137,7 @@ Response:
 | ------------------- | -------- | ------------------------------------- | ------------------------------------------ |
 | `PORT`              | No       | `3000`                                | Server port                                |
 | `API_KEY`           | Yes      | -                                     | API authentication key                     |
+| `API_KEY2`          | No       | -                                     | API authentication key                     |
 | `QUEUE_CONCURRENCY` | No       | `2`                                   | Max concurrent MaxMind lookups             |
 | `GEOIP_DB_PATH`     | No       | `/usr/share/GeoIP/GeoLite2-City.mmdb` | Path to MaxMind database file              |
 | `GEOIP_ACCOUNT_ID`  | Yes      | -                                     | MaxMind account ID for database downloads  |
