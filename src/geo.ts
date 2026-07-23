@@ -50,14 +50,26 @@ export async function getGeoLocation(ip: string, lang = "en"): Promise<GeoLocati
         continent: city.continent
           ? {
               geonameId: city.continent.geonameId,
-              name: localizedName(city.continent.names, lang)
+              name: localizedName(city.continent.names, lang),
+              code: city.continent.code
             }
           : undefined,
         country: city.country
           ? {
               geonameId: city.country.geonameId,
-              name: localizedName(city.country.names, lang)
+              name: localizedName(city.country.names, lang),
+              isoCode: city.country.isoCode,
+              isInEuropeanUnion: city.country.isInEuropeanUnion
             }
+          : undefined,
+        // Ordered most-specific-first by the database (e.g. a US state
+        // before a county); most callers just want subdivisions[0].
+        subdivisions: city.subdivisions?.length
+          ? city.subdivisions.map(subdivision => ({
+              geonameId: subdivision.geonameId,
+              name: localizedName(subdivision.names, lang),
+              isoCode: subdivision.isoCode
+            }))
           : undefined,
         city: city.city
           ? {
@@ -65,6 +77,7 @@ export async function getGeoLocation(ip: string, lang = "en"): Promise<GeoLocati
               name: localizedName(city.city.names, lang)
             }
           : undefined,
+        postalCode: city.postal?.code,
         location: city.location
           ? {
               accuracyRadius: city.location.accuracyRadius,

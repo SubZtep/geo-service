@@ -112,16 +112,27 @@ Response:
 {
   "continent": {
     "geonameId": 6255149,
-    "name": "North America"
+    "name": "North America",
+    "code": "NA"
   },
   "country": {
     "geonameId": 6252001,
-    "name": "United States"
+    "name": "United States",
+    "isoCode": "US",
+    "isInEuropeanUnion": false
   },
+  "subdivisions": [
+    {
+      "geonameId": 5332921,
+      "name": "California",
+      "isoCode": "CA"
+    }
+  ],
   "city": {
     "geonameId": 5375480,
     "name": "Mountain View"
   },
+  "postalCode": "94043",
   "location": {
     "accuracyRadius": 1000,
     "latitude": 37.386,
@@ -130,6 +141,8 @@ Response:
   }
 }
 ```
+
+`country.isoCode` is the ISO 3166-1 alpha-2 code (e.g. `"US"`) — handy for APIs that key off country codes rather than names. `subdivisions` is ordered most-specific-first (state/province before county); most callers just want `subdivisions[0]`.
 
 #### Localized names
 
@@ -142,9 +155,11 @@ curl -H "X-API-Key: your-secret-api-key" \
 
 ```json
 {
-  "continent": { "geonameId": 6255149, "name": "Nordamerika" },
-  "country": { "geonameId": 6252001, "name": "Vereinigte Staaten" },
+  "continent": { "geonameId": 6255149, "name": "Nordamerika", "code": "NA" },
+  "country": { "geonameId": 6252001, "name": "Vereinigte Staaten", "isoCode": "US", "isInEuropeanUnion": false },
+  "subdivisions": [{ "geonameId": 5332921, "name": "Kalifornien", "isoCode": "CA" }],
   "city": { "geonameId": 5375480, "name": "Mountain View" },
+  "postalCode": "94043",
   "location": {
     "accuracyRadius": 1000,
     "latitude": 37.386,

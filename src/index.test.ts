@@ -177,15 +177,31 @@ describe("IP Lookup", () => {
       if (data.continent) {
         expect(data.continent).toHaveProperty("geonameId")
         expect(data.continent).toHaveProperty("name")
+        expect(data.continent).toHaveProperty("code")
         expect(typeof data.continent.geonameId).toBe("number")
         expect(typeof data.continent.name).toBe("string")
+        expect(typeof data.continent.code).toBe("string")
       }
 
       if (data.country) {
         expect(data.country).toHaveProperty("geonameId")
         expect(data.country).toHaveProperty("name")
+        expect(data.country).toHaveProperty("isoCode")
+        expect(data.country).toHaveProperty("isInEuropeanUnion")
         expect(typeof data.country.geonameId).toBe("number")
         expect(typeof data.country.name).toBe("string")
+        expect(typeof data.country.isoCode).toBe("string")
+        expect(typeof data.country.isInEuropeanUnion).toBe("boolean")
+      }
+
+      if (data.subdivisions) {
+        expect(Array.isArray(data.subdivisions)).toBe(true)
+        for (const subdivision of data.subdivisions) {
+          expect(subdivision).toHaveProperty("geonameId")
+          expect(subdivision).toHaveProperty("name")
+          expect(subdivision).toHaveProperty("isoCode")
+          expect(typeof subdivision.isoCode).toBe("string")
+        }
       }
 
       if (data.city) {
@@ -193,6 +209,10 @@ describe("IP Lookup", () => {
         expect(data.city).toHaveProperty("name")
         expect(typeof data.city.geonameId).toBe("number")
         expect(typeof data.city.name).toBe("string")
+      }
+
+      if (data.postalCode) {
+        expect(typeof data.postalCode).toBe("string")
       }
 
       if (data.location) {
