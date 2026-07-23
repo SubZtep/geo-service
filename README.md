@@ -94,7 +94,7 @@ Response:
   },
   "endpoints": {
     "health": "GET /",
-    "lookup": "GET /lookup/:ip (requires X-API-Key header)"
+    "lookup": "GET /lookup/:ip?lang=xx (requires X-API-Key header; lang defaults to en)"
   }
 }
 ```
@@ -112,16 +112,54 @@ Response:
 {
   "continent": {
     "geonameId": 6255149,
-    "name": "North America"
+    "name": "North America",
+    "code": "NA"
   },
   "country": {
     "geonameId": 6252001,
-    "name": "United States"
+    "name": "United States",
+    "isoCode": "US",
+    "isInEuropeanUnion": false
   },
+  "subdivisions": [
+    {
+      "geonameId": 5332921,
+      "name": "California",
+      "isoCode": "CA"
+    }
+  ],
   "city": {
     "geonameId": 5375480,
     "name": "Mountain View"
   },
+  "postalCode": "94043",
+  "location": {
+    "accuracyRadius": 1000,
+    "latitude": 37.386,
+    "longitude": -122.0838,
+    "timeZone": "America/Los_Angeles"
+  }
+}
+```
+
+`country.isoCode` is the ISO 3166-1 alpha-2 code (e.g. `"US"`) — handy for APIs that key off country codes rather than names. `subdivisions` is ordered most-specific-first (state/province before county); most callers just want `subdivisions[0]`.
+
+#### Localized names
+
+Pass `?lang=xx` to get continent/country/city names in another locale (MaxMind GeoLite2-City ships `en`, `de`, `es`, `fr`, `ja`, `pt-BR`, `ru`, `zh-CN`). Falls back to English, then to any available name, if the requested locale isn't present for a given place.
+
+```bash
+curl -H "X-API-Key: your-secret-api-key" \
+  http://localhost:3000/lookup/8.8.8.8?lang=de
+```
+
+```json
+{
+  "continent": { "geonameId": 6255149, "name": "Nordamerika", "code": "NA" },
+  "country": { "geonameId": 6252001, "name": "Vereinigte Staaten", "isoCode": "US", "isInEuropeanUnion": false },
+  "subdivisions": [{ "geonameId": 5332921, "name": "Kalifornien", "isoCode": "CA" }],
+  "city": { "geonameId": 5375480, "name": "Mountain View" },
+  "postalCode": "94043",
   "location": {
     "accuracyRadius": 1000,
     "latitude": 37.386,

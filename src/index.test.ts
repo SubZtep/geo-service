@@ -177,15 +177,31 @@ describe("IP Lookup", () => {
       if (data.continent) {
         expect(data.continent).toHaveProperty("geonameId")
         expect(data.continent).toHaveProperty("name")
+        expect(data.continent).toHaveProperty("code")
         expect(typeof data.continent.geonameId).toBe("number")
         expect(typeof data.continent.name).toBe("string")
+        expect(typeof data.continent.code).toBe("string")
       }
 
       if (data.country) {
         expect(data.country).toHaveProperty("geonameId")
         expect(data.country).toHaveProperty("name")
+        expect(data.country).toHaveProperty("isoCode")
+        expect(data.country).toHaveProperty("isInEuropeanUnion")
         expect(typeof data.country.geonameId).toBe("number")
         expect(typeof data.country.name).toBe("string")
+        expect(typeof data.country.isoCode).toBe("string")
+        expect(typeof data.country.isInEuropeanUnion).toBe("boolean")
+      }
+
+      if (data.subdivisions) {
+        expect(Array.isArray(data.subdivisions)).toBe(true)
+        for (const subdivision of data.subdivisions) {
+          expect(subdivision).toHaveProperty("geonameId")
+          expect(subdivision).toHaveProperty("name")
+          expect(subdivision).toHaveProperty("isoCode")
+          expect(typeof subdivision.isoCode).toBe("string")
+        }
       }
 
       if (data.city) {
@@ -193,6 +209,10 @@ describe("IP Lookup", () => {
         expect(data.city).toHaveProperty("name")
         expect(typeof data.city.geonameId).toBe("number")
         expect(typeof data.city.name).toBe("string")
+      }
+
+      if (data.postalCode) {
+        expect(typeof data.postalCode).toBe("string")
       }
 
       if (data.location) {
@@ -215,6 +235,50 @@ describe("IP Lookup", () => {
 
     // Either 200 with data, 404 if not found, or 500 if database not available
     expect([200, 404, 500]).toContain(res.status)
+  })
+})
+
+describe("Localization", () => {
+  test("GET /lookup/:ip?lang=hu should return localized names or 404/500", async () => {
+    const res = await app.request("/lookup/8.8.8.8?lang=hu", {
+      headers: {
+        "X-API-Key": "test-api-key-12345"
+      }
+    })
+    expect([200, 404, 500]).toContain(res.status)
+
+    if (res.status === 200) {
+      const data = await res.json()
+      if (data.country) expect(typeof data.country.name).toBe("string")
+    }
+  })
+
+  test("GET /lookup/:ip without lang should default to English names", async () => {
+    const res = await app.request("/lookup/8.8.8.8", {
+      headers: {
+        "X-API-Key": "test-api-key-12345"
+      }
+    })
+    expect([200, 404, 500]).toContain(res.status)
+
+    if (res.status === 200) {
+      const data = await res.json()
+      if (data.country) expect(data.country.name).toBe("United States")
+    }
+  })
+
+  test("GET /lookup/:ip with unsupported lang should fall back to English", async () => {
+    const res = await app.request("/lookup/8.8.8.8?lang=xx-not-real", {
+      headers: {
+        "X-API-Key": "test-api-key-12345"
+      }
+    })
+    expect([200, 404, 500]).toContain(res.status)
+
+    if (res.status === 200) {
+      const data = await res.json()
+      if (data.country) expect(data.country.name).toBe("United States")
+    }
   })
 })
 
