@@ -59,7 +59,9 @@ export async function getGeoLocation(ip: string, lang = "en"): Promise<GeoLocati
               geonameId: city.country.geonameId,
               name: localizedName(city.country.names, lang),
               isoCode: city.country.isoCode,
-              isInEuropeanUnion: city.country.isInEuropeanUnion
+              // MaxMind's types claim this is always present, but the actual
+              // mmdb data omits it for some countries; absence means not in the EU.
+              isInEuropeanUnion: city.country.isInEuropeanUnion ?? false
             }
           : undefined,
         // Ordered most-specific-first by the database (e.g. a US state
