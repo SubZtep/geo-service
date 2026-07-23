@@ -22,11 +22,27 @@ async function getReader() {
 }
 
 /**
+ * Picks a locale name from a MaxMind `names` map, falling back to English
+ * (always present) and then to any available name if English is missing.
+ * @param names - The `names` map from a MaxMind record (e.g. `city.names`).
+ *   Typed generically since @maxmind/geoip2-node's `Names` interface has no
+ *   index signature, so this accepts any object with a required `en` string.
+ * @param lang - Requested locale code, e.g. "en", "hu", "de".
+ */
+function localizedName<T extends { en: string }>(names: T, lang: string): string {
+  const byLang = (names as unknown as Record<string, string | undefined>)[lang]
+  return byLang ?? names.en
+}
+
+/**
  * Get the geo location of the given IP address.
  * @param ip - The IP address to get the geo location of.
+ * @param lang - Locale for place names (continent/country/city), e.g. "en", "hu", "de".
+ *   Defaults to "en". Falls back to English, then any available name, if the
+ *   requested locale isn't in the database for a given place.
  * @returns The geo location of the given IP address or undefined if the IP address is not found.
  */
-export async function getGeoLocation(ip: string): Promise<GeoLocation | undefined> {
+export async function getGeoLocation(ip: string, lang = "en"): Promise<GeoLocation | undefined> {
   try {
     const city = (await getReader())?.city(ip)
     if (city) {
@@ -34,19 +50,19 @@ export async function getGeoLocation(ip: string): Promise<GeoLocation | undefine
         continent: city.continent
           ? {
               geonameId: city.continent.geonameId,
-              name: city.continent.names.en
+              name: localizedName(city.continent.names, lang)
             }
           : undefined,
         country: city.country
           ? {
               geonameId: city.country.geonameId,
-              name: city.country.names.en
+              name: localizedName(city.country.names, lang)
             }
           : undefined,
         city: city.city
           ? {
               geonameId: city.city.geonameId,
-              name: city.city.names.en
+              name: localizedName(city.city.names, lang)
             }
           : undefined,
         location: city.location

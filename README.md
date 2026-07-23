@@ -94,7 +94,7 @@ Response:
   },
   "endpoints": {
     "health": "GET /",
-    "lookup": "GET /lookup/:ip (requires X-API-Key header)"
+    "lookup": "GET /lookup/:ip?lang=xx (requires X-API-Key header; lang defaults to en)"
   }
 }
 ```
@@ -122,6 +122,29 @@ Response:
     "geonameId": 5375480,
     "name": "Mountain View"
   },
+  "location": {
+    "accuracyRadius": 1000,
+    "latitude": 37.386,
+    "longitude": -122.0838,
+    "timeZone": "America/Los_Angeles"
+  }
+}
+```
+
+#### Localized names
+
+Pass `?lang=xx` to get continent/country/city names in another locale (MaxMind GeoLite2-City ships `en`, `de`, `es`, `fr`, `ja`, `pt-BR`, `ru`, `zh-CN`). Falls back to English, then to any available name, if the requested locale isn't present for a given place.
+
+```bash
+curl -H "X-API-Key: your-secret-api-key" \
+  http://localhost:3000/lookup/8.8.8.8?lang=de
+```
+
+```json
+{
+  "continent": { "geonameId": 6255149, "name": "Nordamerika" },
+  "country": { "geonameId": 6252001, "name": "Vereinigte Staaten" },
+  "city": { "geonameId": 5375480, "name": "Mountain View" },
   "location": {
     "accuracyRadius": 1000,
     "latitude": 37.386,

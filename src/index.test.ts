@@ -218,6 +218,50 @@ describe("IP Lookup", () => {
   })
 })
 
+describe("Localization", () => {
+  test("GET /lookup/:ip?lang=hu should return localized names or 404/500", async () => {
+    const res = await app.request("/lookup/8.8.8.8?lang=hu", {
+      headers: {
+        "X-API-Key": "test-api-key-12345"
+      }
+    })
+    expect([200, 404, 500]).toContain(res.status)
+
+    if (res.status === 200) {
+      const data = await res.json()
+      if (data.country) expect(typeof data.country.name).toBe("string")
+    }
+  })
+
+  test("GET /lookup/:ip without lang should default to English names", async () => {
+    const res = await app.request("/lookup/8.8.8.8", {
+      headers: {
+        "X-API-Key": "test-api-key-12345"
+      }
+    })
+    expect([200, 404, 500]).toContain(res.status)
+
+    if (res.status === 200) {
+      const data = await res.json()
+      if (data.country) expect(data.country.name).toBe("United States")
+    }
+  })
+
+  test("GET /lookup/:ip with unsupported lang should fall back to English", async () => {
+    const res = await app.request("/lookup/8.8.8.8?lang=xx-not-real", {
+      headers: {
+        "X-API-Key": "test-api-key-12345"
+      }
+    })
+    expect([200, 404, 500]).toContain(res.status)
+
+    if (res.status === 200) {
+      const data = await res.json()
+      if (data.country) expect(data.country.name).toBe("United States")
+    }
+  })
+})
+
 describe("Queue Concurrency", () => {
   test("Multiple concurrent requests should all complete", async () => {
     const requests = []
