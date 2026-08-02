@@ -24,3 +24,30 @@ export async function apiKeyAuth(c: Context, next: Next) {
 
   await next()
 }
+
+/**
+ * Bearer token authentication middleware
+ * Checks for an Authorization: Bearer header and validates against API_KEY env var
+ */
+export async function bearerAuth(c: Context, next: Next) {
+  const authHeader = c.req.header("Authorization")
+  const validApiKey = process.env.API_KEY
+  const validApiKey2 = process.env.API_KEY2
+
+  if (!validApiKey) {
+    console.error("[auth] API_KEY environment variable not set")
+    return c.json({ error: "Server configuration error" }, 500)
+  }
+
+  if (!authHeader?.startsWith("Bearer ")) {
+    return c.json({ error: "Missing Authorization: Bearer header" }, 401)
+  }
+
+  const token = authHeader.slice("Bearer ".length)
+
+  if (token !== validApiKey && token !== validApiKey2) {
+    return c.json({ error: "Invalid API key" }, 403)
+  }
+
+  await next()
+}

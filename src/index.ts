@@ -2,7 +2,8 @@ import { Hono } from "hono"
 import { prettyJSON } from "hono/pretty-json"
 import { name, version } from "../package.json"
 import { getGeoLocation } from "./geo"
-import { apiKeyAuth } from "./middleware/auth"
+import { mcpHandler } from "./mcp"
+import { apiKeyAuth, bearerAuth } from "./middleware/auth"
 import { queue } from "./queue"
 import { GeoLocationSchema } from "./schema"
 
@@ -51,7 +52,8 @@ app.get("/", async c => {
     },
     endpoints: {
       health: "GET /",
-      lookup: "GET /lookup/:ip?lang=xx (requires X-API-Key header; lang defaults to en)"
+      lookup: "GET /lookup/:ip?lang=xx (requires X-API-Key header; lang defaults to en)",
+      mcp: "POST /mcp (MCP Streamable HTTP transport; requires Authorization: Bearer header)"
     },
     documentation: "https://github.com/SubZtep/geo-service"
   })
@@ -94,6 +96,9 @@ app.get("/lookup/:ip", apiKeyAuth, async c => {
 
   return c.json(result.data)
 })
+
+// MCP server (requires Authorization: Bearer header)
+app.all("/mcp", bearerAuth, c => mcpHandler.fetch(c.req.raw))
 
 const port = Number(process.env.PORT || 3000)
 

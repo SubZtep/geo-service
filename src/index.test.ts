@@ -373,6 +373,91 @@ describe("Error Handling", () => {
   })
 })
 
+describe("MCP Endpoint", () => {
+  const initBody = {
+    jsonrpc: "2.0",
+    id: 1,
+    method: "initialize",
+    params: { protocolVersion: "2026-07-28", capabilities: {}, clientInfo: { name: "test", version: "1.0.0" } }
+  }
+
+  test("POST /mcp without Authorization header should return 401", async () => {
+    const res = await app.request("/mcp", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(initBody)
+    })
+    expect(res.status).toBe(401)
+  })
+
+  test("POST /mcp with invalid bearer token should return 403", async () => {
+    const res = await app.request("/mcp", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: "Bearer invalid-key" },
+      body: JSON.stringify(initBody)
+    })
+    expect(res.status).toBe(403)
+  })
+
+  test("POST /mcp with valid bearer token should complete the initialize handshake", async () => {
+    const res = await app.request("/mcp", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json, text/event-stream",
+        Authorization: "Bearer test-api-key-12345"
+      },
+      body: JSON.stringify(initBody)
+    })
+    expect(res.status).toBe(200)
+
+    const text = await res.text()
+    expect(text).toContain('"serverInfo"')
+  })
+
+  test("tools/call my-location with an explicit ip argument should return geo data", async () => {
+    const res = await app.request("/mcp", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json, text/event-stream",
+        Authorization: "Bearer test-api-key-12345"
+      },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        id: 2,
+        method: "tools/call",
+        params: { name: "my-location", arguments: { ip: "8.8.8.8" } }
+      })
+    })
+    expect(res.status).toBe(200)
+
+    const text = await res.text()
+    expect(text).not.toContain('"isError":true')
+  })
+
+  test("tools/call my-location with no ip and no X-Forwarded-For should return an error", async () => {
+    const res = await app.request("/mcp", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json, text/event-stream",
+        Authorization: "Bearer test-api-key-12345"
+      },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        id: 3,
+        method: "tools/call",
+        params: { name: "my-location", arguments: {} }
+      })
+    })
+    expect(res.status).toBe(200)
+
+    const text = await res.text()
+    expect(text).toContain("Could not determine caller IP address")
+  })
+})
+
 describe("Response Headers", () => {
   test("JSON responses should have correct Content-Type", async () => {
     const res = await app.request("/")

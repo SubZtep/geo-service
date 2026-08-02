@@ -7,6 +7,7 @@ Lightweight IP geolocation service using MaxMind GeoLite2 database.
 ## Features
 
 - Fast IP-to-location lookups (city, country, continent, coordinates)
+- MCP server (Model Context Protocol) exposing a `my-location` tool for AI agents
 - Request queuing with configurable concurrency control
 - Simple API key authentication
 - Comprehensive integration test suite
@@ -167,6 +168,28 @@ curl -H "X-API-Key: your-secret-api-key" \
     "timeZone": "America/Los_Angeles"
   }
 }
+```
+
+### MCP Server
+
+The service exposes an MCP (Model Context Protocol) server at `POST /mcp` using the Streamable HTTP transport, so AI agents/clients can connect and call tools directly. Requires an `Authorization: Bearer` header using the same `API_KEY` (or `API_KEY2`) as `/lookup/:ip`.
+
+It exposes one tool:
+
+- **`my-location`** — geolocates the caller, using the same MaxMind lookup as `/lookup/:ip`.
+  - `ip` (optional) — look up this IP instead of the detected caller IP.
+  - `lang` (optional) — locale for place names, e.g. `hu`, `de`. Defaults to `en`.
+
+The caller's IP is detected from the first hop of the `X-Forwarded-For` header, as set by the reverse proxy in front of this service. If no `ip` argument is given and no `X-Forwarded-For` header is present, the tool returns an error.
+
+Example with an MCP-compatible client, or manually via curl:
+
+```bash
+curl -X POST http://localhost:3000/mcp \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -H "Authorization: Bearer your-secret-api-key" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"my-location","arguments":{}}}'
 ```
 
 ## Environment Variables
