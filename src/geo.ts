@@ -40,30 +40,39 @@ function localizedName<T extends { en: string }>(names: T, lang: string): string
  * @param lang - Locale for place names (continent/country/city), e.g. "en", "hu", "de".
  *   Defaults to "en". Falls back to English, then any available name, if the
  *   requested locale isn't in the database for a given place.
+ * @param summary - When true, omits subdivisions/city/postalCode/location and
+ *   returns only continent, country, and a top-level timeZone. Defaults to false.
  * @returns The geo location of the given IP address or undefined if the IP address is not found.
  */
-export async function getGeoLocation(ip: string, lang = "en"): Promise<GeoLocation | undefined> {
+export async function getGeoLocation(ip: string, lang = "en", summary = false): Promise<GeoLocation | undefined> {
   try {
     const city = (await getReader())?.city(ip)
     if (city) {
+      const continent = city.continent
+        ? {
+            geonameId: city.continent.geonameId,
+            name: localizedName(city.continent.names, lang),
+            code: city.continent.code
+          }
+        : undefined
+      const country = city.country
+        ? {
+            geonameId: city.country.geonameId,
+            name: localizedName(city.country.names, lang),
+            isoCode: city.country.isoCode,
+            // MaxMind's types claim this is always present, but the actual
+            // mmdb data omits it for some countries; absence means not in the EU.
+            isInEuropeanUnion: city.country.isInEuropeanUnion ?? false
+          }
+        : undefined
+
+      if (summary) {
+        return { continent, country, timeZone: city.location?.timeZone }
+      }
+
       return {
-        continent: city.continent
-          ? {
-              geonameId: city.continent.geonameId,
-              name: localizedName(city.continent.names, lang),
-              code: city.continent.code
-            }
-          : undefined,
-        country: city.country
-          ? {
-              geonameId: city.country.geonameId,
-              name: localizedName(city.country.names, lang),
-              isoCode: city.country.isoCode,
-              // MaxMind's types claim this is always present, but the actual
-              // mmdb data omits it for some countries; absence means not in the EU.
-              isInEuropeanUnion: city.country.isInEuropeanUnion ?? false
-            }
-          : undefined,
+        continent,
+        country,
         // Ordered most-specific-first by the database (e.g. a US state
         // before a county); most callers just want subdivisions[0].
         subdivisions: city.subdivisions?.length

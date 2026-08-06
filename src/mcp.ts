@@ -15,10 +15,16 @@ export const mcpHandler = createMcpHandler(({ requestInfo }) => {
       description: "Geolocate the caller's IP address (continent, country, city, coordinates, etc.)",
       inputSchema: z.object({
         ip: z.string().optional().describe("Override the detected caller IP and look up this IP instead."),
-        lang: z.string().optional().describe("Locale for place names, e.g. en, hu, de. Defaults to en.")
+        lang: z.string().optional().describe("Locale for place names, e.g. en, hu, de. Defaults to en."),
+        summary: z
+          .boolean()
+          .optional()
+          .describe(
+            "Return only continent, country, and timeZone, omitting city/postal/coordinates. Defaults to false."
+          )
       })
     },
-    async ({ ip, lang }) => {
+    async ({ ip, lang, summary }) => {
       const callerIp = ip || (requestInfo ? getClientIp(requestInfo) : undefined)
 
       if (!callerIp) {
@@ -27,7 +33,7 @@ export const mcpHandler = createMcpHandler(({ requestInfo }) => {
 
       const geoData = await queue.add(async () => {
         console.log("[mcp] Processing IP lookup:", callerIp)
-        return await getGeoLocation(callerIp, lang || "en")
+        return await getGeoLocation(callerIp, lang || "en", summary)
       })
 
       if (!geoData) {

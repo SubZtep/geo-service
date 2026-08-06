@@ -118,7 +118,7 @@ Response:
   },
   "endpoints": {
     "health": "GET /",
-    "lookup": "GET /lookup/:ip?lang=xx (requires X-API-Key header; lang defaults to en)"
+    "lookup": "GET /lookup/:ip?lang=xx&summary=true (requires X-API-Key header; lang defaults to en; summary returns only continent/country/timeZone)"
   }
 }
 ```
@@ -193,6 +193,25 @@ curl -H "X-API-Key: your-secret-api-key" \
 }
 ```
 
+#### Summary mode
+
+Pass `?summary=true` to get a reduced response with just `continent`, `country`, and a top-level `timeZone` — omitting `subdivisions`, `city`, `postalCode`, and precise coordinates. Useful when you only need coarse location data.
+
+```bash
+curl -H "X-API-Key: your-secret-api-key" \
+  http://localhost:3000/lookup/8.8.8.8?summary=true
+```
+
+```json
+{
+  "continent": { "geonameId": 6255149, "name": "North America", "code": "NA" },
+  "country": { "geonameId": 6252001, "name": "United States", "isoCode": "US", "isInEuropeanUnion": false },
+  "timeZone": "America/Los_Angeles"
+}
+```
+
+`summary` composes with `lang`, e.g. `?summary=true&lang=de`.
+
 ### MCP Server
 
 The service exposes an MCP (Model Context Protocol) server at `POST /mcp` using the Streamable HTTP transport, so AI agents/clients can connect and call tools directly. Requires an `Authorization: Bearer` header using the same `API_KEY` (or `API_KEY2`) as `/lookup/:ip`.
@@ -202,6 +221,7 @@ It exposes one tool:
 - **`my-location`** — geolocates the caller, using the same MaxMind lookup as `/lookup/:ip`.
   - `ip` (optional) — look up this IP instead of the detected caller IP.
   - `lang` (optional) — locale for place names, e.g. `hu`, `de`. Defaults to `en`.
+  - `summary` (optional) — when `true`, returns only `continent`, `country`, and `timeZone`, omitting city/postal/coordinates. Defaults to `false`.
 
 The caller's IP is detected from the first hop of the `X-Forwarded-For` header, as set by the reverse proxy in front of this service. If no `ip` argument is given and no `X-Forwarded-For` header is present, the tool returns an error.
 
@@ -213,6 +233,16 @@ curl -X POST http://localhost:3000/mcp \
   -H "Accept: application/json, text/event-stream" \
   -H "Authorization: Bearer your-secret-api-key" \
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"my-location","arguments":{}}}'
+```
+
+To use summary mode, pass `summary: true` in the tool arguments:
+
+```bash
+curl -X POST http://localhost:3000/mcp \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -H "Authorization: Bearer your-secret-api-key" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"my-location","arguments":{"summary":true}}}'
 ```
 
 ## Environment Variables

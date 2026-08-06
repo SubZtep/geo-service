@@ -52,7 +52,8 @@ app.get("/", async c => {
     },
     endpoints: {
       health: "GET /",
-      lookup: "GET /lookup/:ip?lang=xx (requires X-API-Key header; lang defaults to en)",
+      lookup:
+        "GET /lookup/:ip?lang=xx&summary=true (requires X-API-Key header; lang defaults to en; summary returns only continent/country/timeZone)",
       mcp: "POST /mcp (MCP Streamable HTTP transport; requires Authorization: Bearer header)"
     },
     documentation: "https://github.com/SubZtep/geo-service"
@@ -76,11 +77,12 @@ app.get("/lookup/:ip", apiKeyAuth, async c => {
   }
 
   const lang = c.req.query("lang") || "en"
+  const summary = c.req.query("summary") === "true"
 
   // Queue the MaxMind lookup to control concurrency
   const geoData = await queue.add(async () => {
     console.log("[queue] Processing IP lookup:", ip)
-    return await getGeoLocation(ip, lang)
+    return await getGeoLocation(ip, lang, summary)
   })
 
   if (!geoData) {

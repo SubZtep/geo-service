@@ -39,7 +39,8 @@ export const GeoLocationSchema = z.object({
   subdivisions: z.array(GeoSubdivisionSchema).optional(),
   city: GeoPlaceSchema.optional(),
   postalCode: z.string().optional(),
-  location: LocationDetailsSchema.optional()
+  location: LocationDetailsSchema.optional(),
+  timeZone: z.string().optional()
 })
 
 export type GeoLocation = z.infer<typeof GeoLocationSchema>
