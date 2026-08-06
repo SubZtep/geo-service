@@ -4,6 +4,29 @@
 
 Lightweight IP geolocation service using MaxMind GeoLite2 database.
 
+## Call as a service
+
+```bash
+curl -H "X-API-Key: guest" https://ip2geo.demo.land/lookup/77.100.193.121
+```
+
+## Connect to MCP server
+
+```json
+{
+  "mcpServers": {
+    "ip2geo": {
+      "url": "https://ip2geo.demo.land/mcp",
+      "headers": {
+        "Authorization": "Bearer guest"
+      }
+    }
+  }
+}
+```
+
+![Screenshot](https://repository-images.githubusercontent.com/1261703568/a89da771-e555-4d06-9496-69636892a8e4)
+
 ## Features
 
 - Fast IP-to-location lookups (city, country, continent, coordinates)
