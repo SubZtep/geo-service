@@ -5,6 +5,9 @@
 export function getClientIp(req: Request): string | undefined {
   const forwardedFor = req.headers.get("x-forwarded-for")
   if (!forwardedFor) return undefined
-  const hops = forwardedFor.split(",").map((h) => h.trim()).filter(Boolean)
+  const hops = forwardedFor
+    .split(",")
+    .map(h => h.trim())
+    .filter(Boolean)
   return hops.at(-1)
 }
