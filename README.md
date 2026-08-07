@@ -7,8 +7,30 @@ Lightweight IP geolocation service using MaxMind GeoLite2 database.
 ## Call as a service
 
 ```bash
-curl -H "X-API-Key: guest" https://ip2geo.demo.land/lookup/77.100.193.121
+curl -H "X-API-Key: guest" https://ip2geo.demo.land/lookup/77.100.193.121?summary=true
 ```
+
+<details>
+<summary>Response</summary>
+
+```json
+{
+  "continent": {
+    "geonameId": 6255148,
+    "name": "Europe",
+    "code": "EU"
+  },
+  "country": {
+    "geonameId": 2635167,
+    "name": "United Kingdom",
+    "isoCode": "GB",
+    "isInEuropeanUnion": false
+  },
+  "timeZone": "Europe/London"
+}
+```
+
+</details>
 
 ## Connect to MCP server
 
@@ -243,6 +265,25 @@ curl -X POST http://localhost:3000/mcp \
   -H "Accept: application/json, text/event-stream" \
   -H "Authorization: Bearer your-secret-api-key" \
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"my-location","arguments":{"summary":true}}}'
+```
+
+Or with the MCP TypeScript SDK client:
+
+```ts
+import { Client } from "@modelcontextprotocol/sdk/client/index.js"
+import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js"
+
+const transport = new StreamableHTTPClientTransport(new URL(server.url), {
+  requestInit: { headers: server.headers }
+})
+
+const client = new Client({ name: "my-client", version: "1.0.0" })
+await client.connect(transport)
+
+const result = await client.callTool({
+  name: "my-location",
+  arguments: { summary: true }
+})
 ```
 
 ## Environment Variables
