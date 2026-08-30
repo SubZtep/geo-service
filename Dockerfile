@@ -1,4 +1,4 @@
-FROM oven/bun:1.3.14 AS builder
+FROM oven/bun:1.4.0 AS builder
 WORKDIR /home/bun/app
 COPY package.json bun.lock tsconfig.json ./
 RUN bun install --frozen-lockfile
@@ -8,7 +8,7 @@ RUN bun run build
 FROM builder AS prod-deps
 RUN bun install --production --frozen-lockfile
 
-FROM oven/bun:1.3.14-slim AS runner
+FROM oven/bun:1.4.0-slim AS runner
 WORKDIR /home/bun/app
 ENV NODE_ENV=production
 USER root
