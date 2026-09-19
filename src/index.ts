@@ -2,8 +2,10 @@ import { Hono } from "hono"
 import { prettyJSON } from "hono/pretty-json"
 import { name, version } from "../package.json"
 import { getGeoLocation } from "./geo"
-import { mcpHandler } from "./mcp"
+import { isValidIp } from "./ip"
+import { mcpHandler, publicMcpHandler } from "./mcp"
 import { apiKeyAuth, bearerAuth } from "./middleware/auth"
+import { publicRateLimit } from "./middleware/rate-limit"
 import { queue } from "./queue"
 import { GeoLocationSchema } from "./schema"
 
@@ -54,7 +56,9 @@ app.get("/", async c => {
       health: "GET /",
       lookup:
         "GET /lookup/:ip?lang=xx&summary=true (requires X-API-Key header; lang defaults to en; summary returns only continent/country/timeZone)",
-      mcp: "POST /mcp (MCP Streamable HTTP transport; requires Authorization: Bearer header)"
+      mcp: "POST /mcp (MCP Streamable HTTP transport; requires Authorization: Bearer header)",
+      mcpPublic:
+        "POST /mcp/public (MCP Streamable HTTP transport; no key, rate limited; tools get_my_location_full and get_my_location_summary)"
     },
     documentation: "https://github.com/SubZtep/geo-service"
   })
@@ -68,11 +72,7 @@ app.get("/lookup/:ip", apiKeyAuth, async c => {
     return c.json({ error: "IP address is required" }, 400)
   }
 
-  // Basic IP validation
-  const ipv4Regex = /^(\d{1,3}\.){3}\d{1,3}$/
-  const ipv6Regex = /^([0-9a-fA-F]{0,4}:){2,7}[0-9a-fA-F]{0,4}$/
-
-  if (!ipv4Regex.test(ip) && !ipv6Regex.test(ip)) {
+  if (!isValidIp(ip)) {
     return c.json({ error: "Invalid IP address format" }, 400)
   }
 
@@ -101,6 +101,9 @@ app.get("/lookup/:ip", apiKeyAuth, async c => {
 
 // MCP server (requires Authorization: Bearer header)
 app.all("/mcp", bearerAuth, c => mcpHandler.fetch(c.req.raw))
+
+// Public MCP server (no key, rate limited per client IP)
+app.all("/mcp/public", publicRateLimit, c => publicMcpHandler.fetch(c.req.raw))
 
 const port = Number(process.env.PORT || 3000)
 

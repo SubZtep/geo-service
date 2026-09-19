@@ -140,7 +140,9 @@ Response:
   },
   "endpoints": {
     "health": "GET /",
-    "lookup": "GET /lookup/:ip?lang=xx&summary=true (requires X-API-Key header; lang defaults to en; summary returns only continent/country/timeZone)"
+    "lookup": "GET /lookup/:ip?lang=xx&summary=true (requires X-API-Key header; lang defaults to en; summary returns only continent/country/timeZone)",
+    "mcp": "POST /mcp (MCP Streamable HTTP transport; requires Authorization: Bearer header)",
+    "mcpPublic": "POST /mcp/public (MCP Streamable HTTP transport; no key, rate limited; tools get_my_location_full and get_my_location_summary)"
   }
 }
 ```
@@ -286,6 +288,22 @@ const result = await client.callTool({
 })
 ```
 
+### Public MCP Server (no key)
+
+For seamless integration, `POST /mcp/public` serves the same lookup **without any API key**, rate limited per client IP (default 600 requests/minute, see the environment variables below; over the limit it returns `429` with `Retry-After`). It exposes two tools, both with optional `ip` and `lang` arguments:
+
+- **`get_my_location_full`** — continent, country, region, city, postal code, coordinates and time zone. Coordinates are approximate; `location.accuracyRadius` is the radius in km.
+- **`get_my_location_summary`** — country level only: `continent`, `country`, `timeZone`. Smaller response.
+
+Without `ip`, the caller's IP is used (first/last hop of `X-Forwarded-For`, see above). A ready-to-use marketplace config is in [`marketplace/mcp/geo-service.toml`](marketplace/mcp/geo-service.toml).
+
+```bash
+curl -X POST https://ip2geo.demo.land/mcp/public \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"get_my_location_summary","arguments":{"ip":"8.8.8.8"}}}'
+```
+
 ## Environment Variables
 
 | Variable            | Required | Default                               | Description                                |
@@ -297,6 +315,8 @@ const result = await client.callTool({
 | `GEOIP_DB_PATH`     | No       | `/usr/share/GeoIP/GeoLite2-City.mmdb` | Path to MaxMind database file              |
 | `GEOIP_ACCOUNT_ID`  | Yes      | -                                     | MaxMind account ID for database downloads  |
 | `GEOIP_LICENSE_KEY` | Yes      | -                                     | MaxMind license key for database downloads |
+| `PUBLIC_MCP_RATE_LIMIT` | No   | `600`                                 | Requests per window per client IP on `/mcp/public` |
+| `PUBLIC_MCP_RATE_WINDOW_MS` | No | `60000`                             | Rate limit window length in milliseconds   |
 
 ## Error Responses
 

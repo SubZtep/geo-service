@@ -1,12 +1,17 @@
-import { describe, expect, test } from "bun:test"
+import { beforeEach, describe, expect, test } from "bun:test"
+import { existsSync } from "node:fs"
 
 // Mock environment variables before importing app
 process.env.API_KEY = "test-api-key-12345"
 process.env.GEOIP_DB_PATH = "/usr/share/GeoIP/GeoLite2-City.mmdb"
 process.env.QUEUE_CONCURRENCY = "2"
 
+// Tests that need real MaxMind data are skipped when the database file isn't available (e.g. CI)
+const testWithDb = test.skipIf(!existsSync(process.env.GEOIP_DB_PATH))
+
 // Import the app after setting env vars
 import { app } from "./index"
+import { resetRateLimit } from "./middleware/rate-limit"
 
 describe("Health Endpoint", () => {
   test("GET / should return service metadata", async () => {
@@ -415,7 +420,7 @@ describe("MCP Endpoint", () => {
     expect(text).toContain('"serverInfo"')
   })
 
-  test("tools/call my-location with an explicit ip argument should return geo data", async () => {
+  testWithDb("tools/call my-location with an explicit ip argument should return geo data", async () => {
     const res = await app.request("/mcp", {
       method: "POST",
       headers: {
@@ -455,6 +460,77 @@ describe("MCP Endpoint", () => {
 
     const text = await res.text()
     expect(text).toContain("Could not determine caller IP address")
+  })
+})
+
+describe("Public MCP Endpoint", () => {
+  const headers = { "Content-Type": "application/json", Accept: "application/json, text/event-stream" }
+  const rpc = (body: object, extra: Record<string, string> = {}) =>
+    app.request("/mcp/public", {
+      method: "POST",
+      headers: { ...headers, ...extra },
+      body: JSON.stringify({ jsonrpc: "2.0", id: 1, ...body })
+    })
+
+  beforeEach(() => resetRateLimit())
+
+  test("works without any Authorization header and lists exactly the two tools", async () => {
+    const res = await rpc({ method: "tools/list", params: {} })
+    expect(res.status).toBe(200)
+    const text = await res.text()
+    expect(text).toContain("get_my_location_full")
+    expect(text).toContain("get_my_location_summary")
+    expect(text).not.toContain('"my-location"')
+  })
+
+  testWithDb("summary tool returns only continent, country and timeZone", async () => {
+    const res = await rpc({
+      method: "tools/call",
+      params: { name: "get_my_location_summary", arguments: { ip: "8.8.8.8" } }
+    })
+    const text = await res.text()
+    expect(text).not.toContain('"isError":true')
+    expect(text).toContain("continent")
+    expect(text).not.toContain("latitude")
+  })
+
+  testWithDb("full tool returns coordinates", async () => {
+    const res = await rpc({
+      method: "tools/call",
+      params: { name: "get_my_location_full", arguments: { ip: "8.8.8.8" } }
+    })
+    const text = await res.text()
+    expect(text).not.toContain('"isError":true')
+    expect(text).toContain("latitude")
+    expect(text).toContain("accuracyRadius")
+  })
+
+  test("invalid ip returns a tool error", async () => {
+    const res = await rpc({
+      method: "tools/call",
+      params: { name: "get_my_location_full", arguments: { ip: "not-an-ip" } }
+    })
+    const text = await res.text()
+    expect(text).toContain("Invalid IP address format")
+  })
+
+  test("returns 429 with Retry-After once the rate limit is exceeded", async () => {
+    process.env.PUBLIC_MCP_RATE_LIMIT = "2"
+    try {
+      const call = () => rpc({ method: "tools/list", params: {} }, { "X-Forwarded-For": "203.0.113.7" })
+      expect((await call()).status).toBe(200)
+      expect((await call()).status).toBe(200)
+      const limited = await call()
+      expect(limited.status).toBe(429)
+      expect(limited.headers.get("retry-after")).toBeTruthy()
+    } finally {
+      delete process.env.PUBLIC_MCP_RATE_LIMIT
+    }
+  })
+
+  test("keyed /mcp still requires authorization", async () => {
+    const res = await app.request("/mcp", { method: "POST", headers, body: "{}" })
+    expect(res.status).toBe(401)
   })
 })
 
