@@ -3,12 +3,14 @@
   "services": {
     "web": {
       "port": 3000,
-      "volumes": [
-        {
-          "name": "geoip-data",
-          "destinationPath": "/usr/share/GeoIP"
-        }
-      ]
+      "health": {
+        "command": "bun -e \"process.exit((await fetch('http://localhost:3000/ready')).ok ? 0 : 1)\""
+      }
+    },
+    "geoip-update": {
+      "type": "cron",
+      "schedule": "0 6 * * 3,6",
+      "command": "bun run dist/refresh-db.js"
     }
   }
 }

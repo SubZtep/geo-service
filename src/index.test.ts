@@ -50,6 +50,28 @@ describe("Health Endpoint", () => {
   })
 })
 
+describe("Readiness Endpoint", () => {
+  test("GET /ready should reflect whether the GeoIP database is loaded", async () => {
+    const res = await app.request("/ready")
+    expect(res.status).toBe(existsSync(process.env.GEOIP_DB_PATH!) ? 200 : 503)
+  })
+})
+
+describe("Database Refresh Endpoint", () => {
+  test("POST /internal/refresh-db should require an API key", async () => {
+    const res = await app.request("/internal/refresh-db", { method: "POST" })
+    expect(res.status).toBe(401)
+  })
+
+  test("POST /internal/refresh-db should reject an invalid API key", async () => {
+    const res = await app.request("/internal/refresh-db", {
+      method: "POST",
+      headers: { "X-API-Key": "wrong-key" }
+    })
+    expect(res.status).toBe(403)
+  })
+})
+
 describe("Robots.txt Endpoint", () => {
   test("GET /robots.txt should disallow all crawlers", async () => {
     const res = await app.request("/robots.txt")

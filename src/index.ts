@@ -1,7 +1,7 @@
 import { Hono } from "hono"
 import { prettyJSON } from "hono/pretty-json"
 import { name, version } from "../package.json"
-import { getGeoLocation } from "./geo"
+import { getDbPath, getGeoLocation, isDatabaseReady, updateDatabase } from "./geo"
 import { isValidIp } from "./ip"
 import { mcpHandler, publicMcpHandler } from "./mcp"
 import { apiKeyAuth, bearerAuth } from "./middleware/auth"
@@ -25,7 +25,7 @@ app.get("/", async c => {
   const uptime = Math.floor((Date.now() - startTime) / 1000) // seconds
 
   // Get GeoIP database info
-  const mmdbPath = process.env.GEOIP_DB_PATH || "/usr/share/GeoIP/GeoLite2-City.mmdb"
+  const mmdbPath = getDbPath()
   let dbLastModified: string | null = null
 
   try {
@@ -54,14 +54,35 @@ app.get("/", async c => {
     },
     endpoints: {
       health: "GET /",
+      ready: "GET /ready (200 once the GeoIP database is loaded, 503 before)",
       lookup:
         "GET /lookup/:ip?lang=xx&summary=true (requires X-API-Key header; lang defaults to en; summary returns only continent/country/timeZone)",
       mcp: "POST /mcp (MCP Streamable HTTP transport; requires Authorization: Bearer header)",
       mcpPublic:
-        "POST /mcp/public (MCP Streamable HTTP transport; no key, rate limited; tools get_my_location_full and get_my_location_summary)"
+        "POST /mcp/public (MCP Streamable HTTP transport; no key, rate limited; tools get_my_location_full and get_my_location_summary)",
+      refreshDb:
+        "POST /internal/refresh-db (requires X-API-Key header; downloads the latest GeoIP database and reloads it)"
     },
     documentation: "https://github.com/SubZtep/geo-service"
   })
+})
+
+// Readiness probe for zero-downtime deploys: fails until the GeoIP database is loaded
+app.get("/ready", async c => {
+  if (await isDatabaseReady()) {
+    return c.text("ok")
+  }
+  return c.text("GeoIP database not loaded", 503)
+})
+
+// Update the GeoIP database in place (requires API key; called by the scheduled job)
+app.post("/internal/refresh-db", apiKeyAuth, async c => {
+  try {
+    return c.json(await updateDatabase())
+  } catch (err) {
+    console.error("[geo] GeoIP database update failed:", err)
+    return c.json({ error: err instanceof Error ? err.message : String(err) }, 500)
+  }
 })
 
 // Geo lookup endpoint (requires API key)
@@ -106,6 +127,11 @@ app.all("/mcp", bearerAuth, c => mcpHandler.fetch(c.req.raw))
 app.all("/mcp/public", publicRateLimit, c => publicMcpHandler.fetch(c.req.raw))
 
 const port = Number(process.env.PORT || 3000)
+
+// Download the latest GeoIP database on startup (skipped when imported by tests)
+if (import.meta.main) {
+  updateDatabase().catch(err => console.error(`[geo] GeoIP database update failed on startup: ${err}`))
+}
 
 // Export app for testing
 export { app }

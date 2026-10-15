@@ -110,7 +110,7 @@ docker run -p 3000:3000 \
   geo-service
 ```
 
-The container will automatically download the MaxMind database on first start.
+The container downloads the MaxMind database on start (no volume needed); `GET /ready` returns `200` once it is loaded. To pull the latest release later without restarting, call `POST /internal/refresh-db` with the `X-API-Key` header.
 
 ## API Usage
 
@@ -140,9 +140,11 @@ Response:
   },
   "endpoints": {
     "health": "GET /",
+    "ready": "GET /ready (200 once the GeoIP database is loaded, 503 before)",
     "lookup": "GET /lookup/:ip?lang=xx&summary=true (requires X-API-Key header; lang defaults to en; summary returns only continent/country/timeZone)",
     "mcp": "POST /mcp (MCP Streamable HTTP transport; requires Authorization: Bearer header)",
-    "mcpPublic": "POST /mcp/public (MCP Streamable HTTP transport; no key, rate limited; tools get_my_location_full and get_my_location_summary)"
+    "mcpPublic": "POST /mcp/public (MCP Streamable HTTP transport; no key, rate limited; tools get_my_location_full and get_my_location_summary)",
+    "refreshDb": "POST /internal/refresh-db (requires X-API-Key header; downloads the latest GeoIP database and reloads it)"
   }
 }
 ```
@@ -312,7 +314,7 @@ curl -X POST https://ip2geo.demo.land/mcp/public \
 | `API_KEY`           | Yes      | -                                     | API authentication key                     |
 | `API_KEY2`          | No       | -                                     | API authentication key                     |
 | `QUEUE_CONCURRENCY` | No       | `2`                                   | Max concurrent MaxMind lookups             |
-| `GEOIP_DB_PATH`     | No       | `/usr/share/GeoIP/GeoLite2-City.mmdb` | Path to MaxMind database file              |
+| `GEOIP_DB_PATH`     | No       | `/usr/share/GeoIP/GeoLite2-City.mmdb` | Path to MaxMind database file; the file name sets the edition downloaded (e.g. `GeoLite2-Country.mmdb`) |
 | `GEOIP_ACCOUNT_ID`  | Yes      | -                                     | MaxMind account ID for database downloads  |
 | `GEOIP_LICENSE_KEY` | Yes      | -                                     | MaxMind license key for database downloads |
 | `PUBLIC_MCP_RATE_LIMIT` | No   | `600`                                 | Requests per window per client IP on `/mcp/public` |
@@ -375,20 +377,43 @@ bun run build       # Output to dist/
 
 ## Production Deployment
 
-1. Generate a secure API key:
+### Disco
+
+The repo is ready for [Disco](https://disco.cloud): `disco.json` defines the `web` service and a `geoip-update` cron job, no volume needed.
+
+1. Create the project (deploys on every `git push`):
 
 ```bash
-uuidgen -7
+disco projects:add --name geo-service --github SubZtep/geo-service --domain geo.example.com
 ```
 
-2. Set environment variables in your deployment platform
+2. Set the environment variables (this redeploys):
 
-3. Deploy the Docker container or build the service:
+```bash
+disco env:set --project geo-service \
+  API_KEY=$(uuidgen -7) \
+  GEOIP_ACCOUNT_ID=your-account-id \
+  GEOIP_LICENSE_KEY=your-license-key
+```
+
+How the database is kept current:
+
+- **On start**, each `web` container downloads the database with `geoipupdate`. The health check (`GET /ready`) holds traffic until it is loaded, so a deploy with a broken download keeps the previous version running.
+- **Wednesday and Saturday at 06:00** (server time), the `geoip-update` cron job calls `POST /internal/refresh-db` on `web`, which runs `geoipupdate` and hot-swaps the database without a restart. MaxMind publishes GeoLite2 on Tuesdays and Fridays; unchanged files are not re-downloaded.
+- With `disco scale:set web=2` or more, the cron job reaches only one container; the others pick up new data on their next deploy.
+
+Logs: `disco logs --project geo-service --service web` and `--service geoip-update`.
+
+### Other platforms
+
+Build the Docker image or run the service directly, with the environment variables above:
 
 ```bash
 bun run build
 bun run dist/index.js
 ```
+
+To keep the database current, schedule `bun run dist/refresh-db.js` (set `REFRESH_DB_URL` if the service is not reachable at `http://web:3000`) or call `POST /internal/refresh-db` from any scheduler.
 
 ## CI/CD
 
